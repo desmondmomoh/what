@@ -14,4 +14,4 @@ Attackers often disguise malicious payloads by changing their extensions (e.g., 
 Run the script from your terminal and provide the path to the target file as an argument:
 
 ```bash
-python what.py '<path_to_file>'
+python3 what.py '<path_to_file>'
