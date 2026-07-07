@@ -1,4 +1,5 @@
 import sys
+import zipfile
 
 # WELCOME
 print("\n", "="*12, "FILE TYPE IDENTIFIER (Double D)", "="*12,"\n")
@@ -28,7 +29,7 @@ signature_lib = {
 	b'\x25\x50\x44\x46': "PDF Document",
 
 	# ARCHIVES / COMPRESSED FILES
-	b'\x50\x4b\x03\x04': "ZIP ARCHIVE (OR MODERN MICROSOFT OFFICE DOC: DOCX/XLSX/PPTX)",
+	b'\x50\x4b\x03\x04': "ZIP ARCHIVE",
 	b'\x52\x61\x72\x21': "RAR ARCHIVE",
 	b'\x1f\x8b': "GZIP COMPRESSED FILE",
 
@@ -53,6 +54,24 @@ try:
 	# LOOKING THROUGH OUR SIGNATURE DATABASE. THIS CHECKS THE FIRST 12 BYTES TO SEE WHETHER IT STARTS WITH ANYTHING IN SIGNATURE DATABASE OR PRESENT ANYWHERE IN HEADER
 	for signature, file_type in signature_lib.items():
 		if file_header.startswith(signature) or signature in file_header:
+
+
+			# HANDLING ZIP FILES TO IDENTIFY IF DOCX, PPTX OR XLSX
+			if signature == b'\x50\x4b\x03\x04':
+				try:
+					with zipfile.ZipFile(target_file, 'r') as zip_ref:
+						namelist = zip_ref.namelist()	# LISTS WHATEVER IT FINDS IN THE ZIP FILE
+
+						# CHECK FOR MICROSOFT INTERNAL STRUCTURE
+						if any(name.startswith('word/') for name in namelist):
+							file_type = "MICROSOFT WORD DOCUMENT (.docx)"
+						elif any(name.startswith('xl/') for name in namelist):
+							file_type = "MICROSOFT EXCEL SPREADSHEET (.xlsx)"
+						elif any(name.startswith('ppt/') for name in namelist):
+							file_type = "MICROSOFT POWERPOINT DOCUMENT (.pptx)"
+				except zipfile.BadZipFile:
+					pass	# SKIPS THIS ENTIRE CONDITION CHECK IF ZIP FILE DOESN'T CONTAIN MS STRUCTURE OR IS CORRUPT/FAKE
+
 			print(f"FILE TYPE IDENTIFIED: {file_type}")
 			break
 	else:
